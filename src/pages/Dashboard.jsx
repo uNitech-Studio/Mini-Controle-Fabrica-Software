@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import api from "../services/api";
-import { PieChart, Pie, Tooltip, Cell } from "recharts";
+import { PieChart, Pie, Tooltip, Cell, ResponsiveContainer } from "recharts";
 
-const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff8042"];
+const COLORS = ["#e2725b", "#2f6d7a", "#f2a05b", "#1f2937"];
 
 export default function Dashboard() {
   const [projetos, setProjetos] = useState([]);
@@ -12,7 +12,7 @@ export default function Dashboard() {
   const [dados, setDados] = useState(null);
 
   useEffect(() => {
-    api.get("/projetos").then(r => setProjetos(r.data));
+    api.get("/projetos").then((r) => setProjetos(r.data));
   }, []);
 
   function buscar() {
@@ -23,9 +23,9 @@ export default function Dashboard() {
 
     api
       .get(`/projetos/${projetoId}/dashboard`, {
-        params: { inicio, fim }
+        params: { inicio, fim },
       })
-      .then(r => setDados(r.data));
+      .then((r) => setDados(r.data));
   }
 
   function exportCSV() {
@@ -49,67 +49,93 @@ export default function Dashboard() {
   const chartData = dados
     ? Object.entries(dados.porTipo).map(([tipo, v]) => ({
         name: tipo,
-        value: v.horas
+        value: v.horas,
       }))
     : [];
 
   return (
     <div>
-      <h1>Dashboard de Lucratividade</h1>
+      <h1 className="page-title">Dashboard de Lucratividade</h1>
 
-      {/* Filtros */}
-      <div style={{ display: "flex", gap: 10, marginBottom: 20 }}>
-        <select value={projetoId} onChange={e => setProjetoId(e.target.value)}>
-          <option value="">Projeto</option>
-          {projetos.map(p => (
-            <option key={p.id} value={p.id}>{p.nome}</option>
-          ))}
-        </select>
+      <section className="panel">
+        <div className="grid">
+          <h3>Filtros</h3>
+          <div className="grid grid-3">
+            <label className="field">
+              Projeto
+              <select value={projetoId} onChange={(e) => setProjetoId(e.target.value)}>
+                <option value="">Projeto</option>
+                {projetos.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.nome}
+                  </option>
+                ))}
+              </select>
+            </label>
 
-        <input type="date" value={inicio} onChange={e => setInicio(e.target.value)} />
-        <input type="date" value={fim} onChange={e => setFim(e.target.value)} />
+            <label className="field">
+              Data início
+              <input type="date" value={inicio} onChange={(e) => setInicio(e.target.value)} />
+            </label>
 
-        <button onClick={buscar}>Calcular</button>
-      </div>
-
-      {/* Métricas */}
-      {dados && (
-        <>
-          <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
-            <Card title="Horas totais" value={dados.horas} />
-            <Card title="Custo total" value={`R$ ${dados.custo}`} />
-            <Card title="Receita" value={`R$ ${dados.receita}`} />
-            <Card title="Margem (R$)" value={`R$ ${dados.margem}`} />
-            <Card title="Margem (%)" value={`${dados.margemPercent}%`} />
-            <Card title="Break-even (h)" value={dados.breakEven} />
+            <label className="field">
+              Data fim
+              <input type="date" value={fim} onChange={(e) => setFim(e.target.value)} />
+            </label>
           </div>
 
-          {/* Gráfico */}
-          <h3>Horas por tipo</h3>
-          <PieChart width={350} height={300}>
-            <Pie data={chartData} dataKey="value" outerRadius={100}>
-              {chartData.map((_, i) => (
-                <Cell key={i} fill={COLORS[i % COLORS.length]} />
-              ))}
-            </Pie>
-            <Tooltip />
-          </PieChart>
+          <div className="actions">
+            <button className="btn btn-primary" onClick={buscar}>
+              Calcular
+            </button>
+          </div>
+        </div>
+      </section>
 
-          <button onClick={exportCSV}>Exportar CSV</button>
+      {dados && (
+        <>
+          <section className="panel">
+            <div className="metrics">
+              <MetricCard title="Horas totais" value={dados.horas} />
+              <MetricCard title="Custo total" value={`R$ ${dados.custo}`} />
+              <MetricCard title="Receita" value={`R$ ${dados.receita}`} />
+              <MetricCard title="Margem (R$)" value={`R$ ${dados.margem}`} />
+              <MetricCard title="Margem (%)" value={`${dados.margemPercent}%`} />
+              <MetricCard title="Break-even (h)" value={dados.breakEven} />
+            </div>
+          </section>
+
+          <section className="panel">
+            <div className="grid">
+              <h3>Horas por tipo</h3>
+              <div style={{ width: "100%", height: 280 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={chartData} dataKey="value" outerRadius={110} innerRadius={50}>
+                      {chartData.map((_, i) => (
+                        <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="actions">
+                <button className="btn btn-ghost" onClick={exportCSV}>
+                  Exportar CSV
+                </button>
+              </div>
+            </div>
+          </section>
         </>
       )}
     </div>
   );
 }
 
-function Card({ title, value }) {
+function MetricCard({ title, value }) {
   return (
-    <div style={{
-      padding: 15,
-      background: "#eee",
-      borderRadius: 8,
-      minWidth: 150
-    }}>
+    <div className="metric-card">
       <strong>{title}</strong>
       <div>{value}</div>
     </div>

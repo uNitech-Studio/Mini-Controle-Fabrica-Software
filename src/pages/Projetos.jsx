@@ -96,107 +96,150 @@ export default function Projetos() {
 
   return (
     <div>
-      <h1>Projetos</h1>
+      <h1 className="page-title">Projetos</h1>
 
-      <form onSubmit={handleSubmit} style={{ display: "grid", gap: 8, maxWidth: 520 }}>
-        <select
-          value={form.cliente_id}
-          onChange={(e) => setForm({ ...form, cliente_id: e.target.value })}
-          required
-        >
-          <option value="">Selecione o cliente</option>
-          {clientes.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.nome}
-            </option>
-          ))}
-        </select>
+      <section className="panel">
+        <form onSubmit={handleSubmit} className="grid">
+          <label className="field">
+            Cliente
+            <select
+              value={form.cliente_id}
+              onChange={(e) => setForm({ ...form, cliente_id: e.target.value })}
+              required
+            >
+              <option value="">Selecione o cliente</option>
+              {clientes.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nome}
+                </option>
+              ))}
+            </select>
+          </label>
 
-        <input
-          placeholder="Nome (obrigatório)"
-          value={form.nome}
-          onChange={(e) => setForm({ ...form, nome: e.target.value })}
-          required
-        />
+          <label className="field">
+            Nome do projeto
+            <input
+              placeholder="Nome (obrigatório)"
+              value={form.nome}
+              onChange={(e) => setForm({ ...form, nome: e.target.value })}
+              required
+            />
+          </label>
 
-        <textarea
-          placeholder="Descrição (opcional)"
-          value={form.descricao}
-          onChange={(e) => setForm({ ...form, descricao: e.target.value })}
-          rows={3}
-        />
+          <label className="field">
+            Descrição
+            <textarea
+              placeholder="Descrição (opcional)"
+              value={form.descricao}
+              onChange={(e) => setForm({ ...form, descricao: e.target.value })}
+              rows={3}
+            />
+          </label>
 
-        <label>
-          Data início (obrigatório)
-          <input
-            type="date"
-            value={form.data_inicio}
-            onChange={(e) => setForm({ ...form, data_inicio: e.target.value })}
-            required
-          />
-        </label>
+          <div className="grid grid-2">
+            <label className="field">
+              Data início
+              <input
+                type="date"
+                value={form.data_inicio}
+                onChange={(e) => setForm({ ...form, data_inicio: e.target.value })}
+                required
+              />
+            </label>
 
-        <label>
-          Data fim (opcional)
-          <input
-            type="date"
-            value={form.data_fim}
-            onChange={(e) => setForm({ ...form, data_fim: e.target.value })}
-          />
-        </label>
+            <label className="field">
+              Data fim
+              <input
+                type="date"
+                value={form.data_fim}
+                onChange={(e) => setForm({ ...form, data_fim: e.target.value })}
+              />
+            </label>
+          </div>
 
-        <input
-          placeholder="Valor contrato (maior que 0)"
-          type="number"
-          step="0.01"
-          value={form.valor_contrato}
-          onChange={(e) => setForm({ ...form, valor_contrato: e.target.value })}
-          required
-        />
+          <div className="grid grid-2">
+            <label className="field">
+              Valor do contrato
+              <input
+                placeholder="Maior que 0"
+                type="number"
+                step="0.01"
+                value={form.valor_contrato}
+                onChange={(e) => setForm({ ...form, valor_contrato: e.target.value })}
+                required
+              />
+            </label>
 
-        <input
-          placeholder="Custo hora base (maior que 0)"
-          type="number"
-          step="0.01"
-          value={form.custo_hora_base}
-          onChange={(e) => setForm({ ...form, custo_hora_base: e.target.value })}
-          required
-        />
+            <label className="field">
+              Custo hora base
+              <input
+                placeholder="Maior que 0"
+                type="number"
+                step="0.01"
+                value={form.custo_hora_base}
+                onChange={(e) => setForm({ ...form, custo_hora_base: e.target.value })}
+                required
+              />
+            </label>
+          </div>
 
-        <select
-          value={form.status}
-          onChange={(e) => setForm({ ...form, status: e.target.value })}
-        >
-          {STATUS.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
+          <label className="field">
+            Status
+            <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
+              {STATUS.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+          </label>
 
-        <div style={{ display: "flex", gap: 8 }}>
-          <button type="submit">{editandoId ? "Atualizar" : "Salvar"}</button>
-          {editandoId && (
-            <button type="button" onClick={reset}>
-              Cancelar
+          <div className="actions">
+            <button className="btn btn-primary" type="submit">
+              {editandoId ? "Atualizar" : "Salvar"}
             </button>
-          )}
-        </div>
-      </form>
+            {editandoId && (
+              <button className="btn btn-ghost" type="button" onClick={reset}>
+                Cancelar
+              </button>
+            )}
+          </div>
+        </form>
+      </section>
 
-      <hr />
-
-      <ul>
-        {projetos.map((p) => (
-          <li key={p.id} style={{ marginBottom: 8 }}>
-            <b>{p.nome}</b> — status: {p.status} — cliente_id: {p.cliente_id}
-            <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
-              <button onClick={() => editar(p)}>Editar</button>
-              <button onClick={() => excluir(p.id)}>Excluir</button>
-            </div>
-          </li>
-        ))}
-      </ul>
+      <section className="panel">
+        <table className="table">
+          <thead>
+            <tr>
+              <th>Projeto</th>
+              <th>Cliente</th>
+              <th>Status</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {projetos.map((p) => (
+              <tr key={p.id}>
+                <td>{p.nome}</td>
+                <td>{p.client?.nome || p.cliente_id}</td>
+                <td>
+                  <span className="badge">{p.status}</span>
+                </td>
+                <td>
+                  <div className="actions">
+                    <button className="btn" onClick={() => editar(p)}>
+                      Editar
+                    </button>
+                    <button className="btn btn-ghost" onClick={() => excluir(p.id)}>
+                      Excluir
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
     </div>
   );
 }

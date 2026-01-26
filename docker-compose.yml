@@ -1,0 +1,33 @@
+version: "3.9"
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: fabrica_mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: fabrica
+      MYSQL_USER: fabrica
+      MYSQL_PASSWORD: fabrica
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  backend:
+    build:
+      context: ./backend
+    container_name: fabrica_backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/var/www
+      - backend_vendor:/var/www/vendor
+    depends_on:
+      - mysql
+    command: >
+      sh -c "php artisan serve --host=0.0.0.0 --port=8000"
+
+volumes:
+  mysql_data:
+  backend_vendor:

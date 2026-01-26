@@ -113,138 +113,146 @@ export default function Lancamentos() {
 
   return (
     <div>
-      <h1>Lançamentos (Timesheet)</h1>
+      <h1 className="page-title">Lançamentos (Timesheet)</h1>
 
-      <section style={{ display: "grid", gap: 8, maxWidth: 720 }}>
-        <h3>Filtros (obrigatórios)</h3>
+      <section className="panel">
+        <div className="grid">
+          <h3>Filtros</h3>
 
-        <select
-          value={filtroProjetoId}
-          onChange={(e) => {
-            setFiltroProjetoId(e.target.value);
-            setForm((f) => ({ ...f, projeto_id: e.target.value }));
-          }}
-          required
-        >
-          <option value="">Selecione o projeto</option>
-          {projetos.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.nome}
-            </option>
-          ))}
-        </select>
-
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <label>
-            Data início
-            <input
-              type="date"
-              value={inicio}
-              onChange={(e) => setInicio(e.target.value)}
+          <label className="field">
+            Projeto
+            <select
+              value={filtroProjetoId}
+              onChange={(e) => {
+                setFiltroProjetoId(e.target.value);
+                setForm((f) => ({ ...f, projeto_id: e.target.value }));
+              }}
               required
-            />
+            >
+              <option value="">Selecione o projeto</option>
+              {projetos.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.nome}
+                </option>
+              ))}
+            </select>
           </label>
 
-          <label>
-            Data fim
-            <input
-              type="date"
-              value={fim}
-              onChange={(e) => setFim(e.target.value)}
-              required
-            />
-          </label>
+          <div className="grid grid-2">
+            <label className="field">
+              Data início
+              <input type="date" value={inicio} onChange={(e) => setInicio(e.target.value)} required />
+            </label>
 
-          <button type="button" onClick={carregarLancamentos} disabled={!filtrosOk}>
-            Aplicar filtros
-          </button>
-        </div>
-
-        {!filtrosOk && (
-          <small style={{ opacity: 0.8 }}>
-            Selecione <b>projeto</b> e informe <b>data início</b> e <b>data fim</b> para listar.
-          </small>
-        )}
-      </section>
-
-      <hr />
-
-      <section style={{ display: "grid", gap: 8, maxWidth: 720 }}>
-        <h3>{editandoId ? "Editar lançamento" : "Novo lançamento"}</h3>
-
-        <form onSubmit={handleSubmit} style={{ display: "grid", gap: 8 }}>
-          <select
-            value={form.projeto_id}
-            onChange={(e) => setForm({ ...form, projeto_id: e.target.value })}
-            required
-          >
-            <option value="">Projeto</option>
-            {projetos.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.nome}
-              </option>
-            ))}
-          </select>
-
-          <input
-            placeholder="Colaborador (obrigatório)"
-            value={form.colaborador}
-            onChange={(e) => setForm({ ...form, colaborador: e.target.value })}
-            required
-          />
-
-          <label>
-            Data (obrigatório)
-            <input
-              type="date"
-              value={form.data}
-              onChange={(e) => setForm({ ...form, data: e.target.value })}
-              required
-            />
-          </label>
-
-          <input
-            placeholder="Horas (ex: 1.5) (obrigatório)"
-            type="number"
-            step="0.01"
-            value={form.horas}
-            onChange={(e) => setForm({ ...form, horas: e.target.value })}
-            required
-          />
-
-          <select
-            value={form.tipo}
-            onChange={(e) => setForm({ ...form, tipo: e.target.value })}
-            required
-          >
-            {TIPOS.map((t) => (
-              <option key={t} value={t}>
-                {t}
-              </option>
-            ))}
-          </select>
-
-          <textarea
-            placeholder="Descrição (opcional)"
-            value={form.descricao}
-            onChange={(e) => setForm({ ...form, descricao: e.target.value })}
-            rows={3}
-          />
-
-          <div style={{ display: "flex", gap: 8 }}>
-            <button type="submit">{editandoId ? "Atualizar" : "Salvar"}</button>
-            {editandoId && (
-              <button type="button" onClick={resetForm}>
-                Cancelar
-              </button>
-            )}
+            <label className="field">
+              Data fim
+              <input type="date" value={fim} onChange={(e) => setFim(e.target.value)} required />
+            </label>
           </div>
-        </form>
+
+          <div className="actions">
+            <button className="btn btn-primary" type="button" onClick={carregarLancamentos} disabled={!filtrosOk}>
+              Aplicar filtros
+            </button>
+          </div>
+
+          {!filtrosOk && (
+            <small style={{ color: "var(--muted)" }}>
+              Selecione <b>projeto</b> e informe <b>data início</b> e <b>data fim</b> para listar.
+            </small>
+          )}
+        </div>
       </section>
 
-      <hr />
+      <section className="panel">
+        <div className="grid">
+          <h3>{editandoId ? "Editar lançamento" : "Novo lançamento"}</h3>
 
-      <section>
+          <form onSubmit={handleSubmit} className="grid">
+            <label className="field">
+              Projeto
+              <select
+                value={form.projeto_id}
+                onChange={(e) => setForm({ ...form, projeto_id: e.target.value })}
+                required
+              >
+                <option value="">Projeto</option>
+                {projetos.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.nome}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="field">
+              Colaborador
+              <input
+                placeholder="Colaborador (obrigatório)"
+                value={form.colaborador}
+                onChange={(e) => setForm({ ...form, colaborador: e.target.value })}
+                required
+              />
+            </label>
+
+            <label className="field">
+              Data
+              <input
+                type="date"
+                value={form.data}
+                onChange={(e) => setForm({ ...form, data: e.target.value })}
+                required
+              />
+            </label>
+
+            <label className="field">
+              Horas
+              <input
+                placeholder="Horas (ex: 1.5)"
+                type="number"
+                step="0.01"
+                value={form.horas}
+                onChange={(e) => setForm({ ...form, horas: e.target.value })}
+                required
+              />
+            </label>
+
+            <label className="field">
+              Tipo
+              <select value={form.tipo} onChange={(e) => setForm({ ...form, tipo: e.target.value })} required>
+                {TIPOS.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="field">
+              Descrição
+              <textarea
+                placeholder="Descrição (opcional)"
+                value={form.descricao}
+                onChange={(e) => setForm({ ...form, descricao: e.target.value })}
+                rows={3}
+              />
+            </label>
+
+            <div className="actions">
+              <button className="btn btn-primary" type="submit">
+                {editandoId ? "Atualizar" : "Salvar"}
+              </button>
+              {editandoId && (
+                <button className="btn btn-ghost" type="button" onClick={resetForm}>
+                  Cancelar
+                </button>
+              )}
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <section className="panel">
         <h3>Listagem</h3>
 
         {!filtrosOk ? (
@@ -252,7 +260,7 @@ export default function Lancamentos() {
         ) : lancamentos.length === 0 ? (
           <p>Nenhum lançamento no período.</p>
         ) : (
-          <table border="1" cellPadding="8" style={{ borderCollapse: "collapse", width: "100%" }}>
+          <table className="table">
             <thead>
               <tr>
                 <th>Data</th>
@@ -272,8 +280,14 @@ export default function Lancamentos() {
                   <td>{l.horas}</td>
                   <td>{l.descricao || "-"}</td>
                   <td>
-                    <button onClick={() => editar(l)}>Editar</button>{" "}
-                    <button onClick={() => excluir(l.id)}>Excluir</button>
+                    <div className="actions">
+                      <button className="btn" onClick={() => editar(l)}>
+                        Editar
+                      </button>
+                      <button className="btn btn-ghost" onClick={() => excluir(l.id)}>
+                        Excluir
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

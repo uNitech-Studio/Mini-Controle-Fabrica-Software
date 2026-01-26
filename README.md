@@ -1,16 +1,79 @@
-# React + Vite
+# Mini Controle de Fabrica de Software
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Aplicacao web para controle de clientes, projetos, lancamentos de horas e dashboard de lucratividade.
 
-Currently, two official plugins are available:
+## Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Backend: Laravel (API REST)
+- Frontend: React + Vite
+- Banco: MySQL
 
-## React Compiler
+## Como subir com Docker Compose
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+1) Copie o arquivo de ambiente do backend:
 
-## Expanding the ESLint configuration
+```bash
+copy backend\.env.example backend\.env
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+2) Suba os containers:
+
+```bash
+docker compose up -d --build
+```
+
+3) Instale dependencias e prepare o Laravel:
+
+```bash
+docker compose exec backend composer install
+docker compose exec backend php artisan key:generate
+docker compose exec backend php artisan migrate --seed
+```
+
+4) Suba o frontend localmente:
+
+```bash
+npm install
+npm run dev
+```
+
+Frontend: `http://localhost:5173`  
+API: `http://localhost:8000/api`
+
+## Rodar sem Docker (opcional)
+
+1) Configure MySQL local e ajuste `backend/.env` com suas credenciais.  
+2) No backend:
+
+```bash
+cd backend
+composer install
+php artisan key:generate
+php artisan migrate --seed
+php artisan serve
+```
+
+3) No frontend:
+
+```bash
+npm install
+npm run dev
+```
+
+## Endpoints principais
+
+- `GET /api/clientes?busca=...`
+- `POST /api/clientes`
+- `GET /api/projetos`
+- `POST /api/projetos`
+- `GET /api/lancamentos?projeto_id=1&inicio=YYYY-MM-DD&fim=YYYY-MM-DD`
+- `POST /api/lancamentos`
+- `GET /api/projetos/{id}/dashboard?inicio=YYYY-MM-DD&fim=YYYY-MM-DD`
+
+## Seed
+
+O comando `php artisan migrate --seed` cria clientes, projetos e lancamentos exemplo.
+
+## Variaveis de ambiente (backend)
+
+Veja `backend/.env.example` para MySQL (host `mysql`, porta `3306`).

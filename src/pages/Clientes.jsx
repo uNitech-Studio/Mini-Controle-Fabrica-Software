@@ -46,37 +46,90 @@ export default function Clientes() {
 
   return (
     <div>
-      <h1>Clientes</h1>
+      <h1 className="page-title">Clientes</h1>
 
-      <input
-        placeholder="Buscar por nome/email"
-        value={busca}
-        onChange={e => setBusca(e.target.value)}
-        onKeyUp={carregarClientes}
-      />
+      <section className="panel">
+        <div className="grid">
+          <label className="field">
+            Buscar por nome ou e-mail
+            <input
+              placeholder="Ex: maria@empresa.com"
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              onKeyUp={carregarClientes}
+            />
+          </label>
 
-      <form onSubmit={handleSubmit}>
-        <input placeholder="Nome" value={form.nome}
-          onChange={e => setForm({ ...form, nome: e.target.value })} required />
+          <form onSubmit={handleSubmit} className="grid grid-3">
+            <label className="field">
+              Nome
+              <input
+                placeholder="Nome"
+                value={form.nome}
+                onChange={(e) => setForm({ ...form, nome: e.target.value })}
+                required
+              />
+            </label>
 
-        <input placeholder="Email" value={form.email}
-          onChange={e => setForm({ ...form, email: e.target.value })} required />
+            <label className="field">
+              E-mail
+              <input
+                placeholder="Email"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                required
+              />
+            </label>
 
-        <input placeholder="Telefone" value={form.telefone}
-          onChange={e => setForm({ ...form, telefone: e.target.value })} />
+            <label className="field">
+              Telefone
+              <input
+                placeholder="Telefone"
+                value={form.telefone}
+                onChange={(e) => setForm({ ...form, telefone: e.target.value })}
+              />
+            </label>
 
-        <button type="submit">{editandoId ? "Atualizar" : "Salvar"}</button>
-      </form>
+            <div className="actions">
+              <button className="btn btn-primary" type="submit">
+                {editandoId ? "Atualizar" : "Salvar"}
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
 
-      <ul>
-        {clientes.map(c => (
-          <li key={c.id}>
-            {c.nome} - {c.email}
-            <button onClick={() => editar(c)}>Editar</button>
-            <button onClick={() => excluir(c.id)}>Excluir</button>
-          </li>
-        ))}
-      </ul>
+      <section className="panel">
+        <table className="table">
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>E-mail</th>
+              <th>Telefone</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {clientes.map((c) => (
+              <tr key={c.id}>
+                <td>{c.nome}</td>
+                <td>{c.email}</td>
+                <td>{c.telefone || "-"}</td>
+                <td>
+                  <div className="actions">
+                    <button className="btn" onClick={() => editar(c)}>
+                      Editar
+                    </button>
+                    <button className="btn btn-ghost" onClick={() => excluir(c.id)}>
+                      Excluir
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
     </div>
   );
 }
