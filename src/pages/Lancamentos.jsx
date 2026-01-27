@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../services/api";
+import Toast from "../components/Toast";
 
 const TIPOS = ["corretiva", "evolutiva", "implantacao", "legislativa"];
 
@@ -12,6 +13,10 @@ export default function Lancamentos() {
   const [fim, setFim] = useState("");
 
   const [editandoId, setEditandoId] = useState(null);
+  const [feedback, setFeedback] = useState({ message: "", tone: "info" });
+  const [salvando, setSalvando] = useState(false);
+  const [carregando, setCarregando] = useState(false);
+  const [erros, setErros] = useState({});
 
   const [form, setForm] = useState({
     projeto_id: "",
@@ -35,12 +40,14 @@ export default function Lancamentos() {
       setLancamentos([]);
       return;
     }
+    setCarregando(true);
     api
       .get("/lancamentos", {
         params: { projeto_id: filtroProjetoId, inicio, fim },
       })
       .then((r) => setLancamentos(r.data))
-      .catch((e) => console.error(e));
+      .catch((e) => console.error(e))
+      .finally(() => setCarregando(false));
   }
 
   useEffect(() => {
@@ -49,6 +56,7 @@ export default function Lancamentos() {
 
   function resetForm() {
     setEditandoId(null);
+    setErros({});
     setForm({
       projeto_id: filtroProjetoId || "",
       colaborador: "",
@@ -60,20 +68,23 @@ export default function Lancamentos() {
   }
 
   function validarForm() {
-    if (!form.projeto_id) return "Selecione o projeto.";
-    if (!form.colaborador?.trim()) return "Colaborador é obrigatório.";
-    if (!form.data) return "Data é obrigatória.";
+    const novosErros = {};
+    if (!form.projeto_id) novosErros.projeto_id = "Selecione o projeto.";
+    if (!form.colaborador?.trim()) novosErros.colaborador = "Colaborador é obrigatório.";
+    if (!form.data) novosErros.data = "Data é obrigatória.";
     const h = Number(form.horas);
-    if (!Number.isFinite(h) || h <= 0) return "Horas precisa ser maior que 0.";
-    if (!TIPOS.includes(form.tipo)) return "Tipo inválido.";
-    return null;
+    if (!Number.isFinite(h) || h <= 0) novosErros.horas = "Horas precisa ser maior que 0.";
+    if (!TIPOS.includes(form.tipo)) novosErros.tipo = "Tipo inválido.";
+    return novosErros;
   }
 
   function handleSubmit(e) {
     e.preventDefault();
-    const erro = validarForm();
-    if (erro) return alert(erro);
+    const novosErros = validarForm();
+    setErros(novosErros);
+    if (Object.keys(novosErros).length) return;
 
+    setSalvando(true);
     const payload = {
       ...form,
       projeto_id: Number(form.projeto_id),
@@ -88,9 +99,21 @@ export default function Lancamentos() {
     req
       .then(() => {
         resetForm();
+        setFeedback({ message: "Lançamento salvo com sucesso!", tone: "success" });
         carregarLancamentos();
       })
-      .catch((e) => console.error(e));
+      .catch((err) => {
+        const apiErrors = err?.response?.data?.errors;
+        if (apiErrors) {
+          const mapped = {};
+          Object.keys(apiErrors).forEach((k) => {
+            mapped[k] = apiErrors[k][0];
+          });
+          setErros(mapped);
+        }
+        setFeedback({ message: "Erro ao salvar lançamento.", tone: "error" });
+      })
+      .finally(() => setSalvando(false));
   }
 
   function editar(l) {
@@ -107,13 +130,24 @@ export default function Lancamentos() {
 
   function excluir(id) {
     if (confirm("Excluir lançamento?")) {
-      api.delete(`/lancamentos/${id}`).then(carregarLancamentos);
+      api
+        .delete(`/lancamentos/${id}`)
+        .then(() => {
+          setFeedback({ message: "Lançamento excluído.", tone: "info" });
+          carregarLancamentos();
+        })
+        .catch(() => setFeedback({ message: "Erro ao excluir lançamento.", tone: "error" }));
     }
   }
 
   return (
     <div>
       <h1 className="page-title">Lançamentos (Timesheet)</h1>
+      <Toast
+        message={feedback.message}
+        tone={feedback.tone}
+        onClose={() => setFeedback({ message: "", tone: "info" })}
+      />
 
       <section className="panel">
         <div className="grid">
@@ -183,6 +217,7 @@ export default function Lancamentos() {
                   </option>
                 ))}
               </select>
+              {erros.projeto_id && <small>{erros.projeto_id}</small>}
             </label>
 
             <label className="field">
@@ -193,6 +228,7 @@ export default function Lancamentos() {
                 onChange={(e) => setForm({ ...form, colaborador: e.target.value })}
                 required
               />
+              {erros.colaborador && <small>{erros.colaborador}</small>}
             </label>
 
             <label className="field">
@@ -203,6 +239,7 @@ export default function Lancamentos() {
                 onChange={(e) => setForm({ ...form, data: e.target.value })}
                 required
               />
+              {erros.data && <small>{erros.data}</small>}
             </label>
 
             <label className="field">
@@ -215,6 +252,7 @@ export default function Lancamentos() {
                 onChange={(e) => setForm({ ...form, horas: e.target.value })}
                 required
               />
+              {erros.horas && <small>{erros.horas}</small>}
             </label>
 
             <label className="field">
@@ -226,6 +264,7 @@ export default function Lancamentos() {
                   </option>
                 ))}
               </select>
+              {erros.tipo && <small>{erros.tipo}</small>}
             </label>
 
             <label className="field">
@@ -239,8 +278,8 @@ export default function Lancamentos() {
             </label>
 
             <div className="actions">
-              <button className="btn btn-primary" type="submit">
-                {editandoId ? "Atualizar" : "Salvar"}
+              <button className="btn btn-primary" type="submit" disabled={salvando}>
+                {salvando ? "Salvando..." : editandoId ? "Atualizar" : "Salvar"}
               </button>
               {editandoId && (
                 <button className="btn btn-ghost" type="button" onClick={resetForm}>
@@ -257,42 +296,68 @@ export default function Lancamentos() {
 
         {!filtrosOk ? (
           <p>Preencha os filtros para ver os lançamentos.</p>
-        ) : lancamentos.length === 0 ? (
-          <p>Nenhum lançamento no período.</p>
         ) : (
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Data</th>
-                <th>Colaborador</th>
-                <th>Tipo</th>
-                <th>Horas</th>
-                <th>Descrição</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {lancamentos.map((l) => (
-                <tr key={l.id}>
-                  <td>{l.data}</td>
-                  <td>{l.colaborador}</td>
-                  <td>{l.tipo}</td>
-                  <td>{l.horas}</td>
-                  <td>{l.descricao || "-"}</td>
-                  <td>
-                    <div className="actions">
-                      <button className="btn" onClick={() => editar(l)}>
-                        Editar
-                      </button>
-                      <button className="btn btn-ghost" onClick={() => excluir(l.id)}>
-                        Excluir
-                      </button>
-                    </div>
-                  </td>
+          <>
+            {(!carregando && lancamentos.length === 0) && <p>Nenhum lançamento no período.</p>}
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Colaborador</th>
+                  <th>Tipo</th>
+                  <th>Horas</th>
+                  <th>Descrição</th>
+                  <th>Ações</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {carregando ? (
+                  [1, 2, 3].map((i) => (
+                    <tr className="skeleton-row" key={i}>
+                      <td>
+                        <div className="skeleton skeleton-line" />
+                      </td>
+                      <td>
+                        <div className="skeleton skeleton-line" />
+                      </td>
+                      <td>
+                        <div className="skeleton skeleton-line" />
+                      </td>
+                      <td>
+                        <div className="skeleton skeleton-line" />
+                      </td>
+                      <td>
+                        <div className="skeleton skeleton-line" />
+                      </td>
+                      <td>
+                        <div className="skeleton skeleton-line" />
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  lancamentos.map((l) => (
+                    <tr key={l.id} className="row-animate">
+                      <td>{l.data}</td>
+                      <td>{l.colaborador}</td>
+                      <td>{l.tipo}</td>
+                      <td>{l.horas}</td>
+                      <td>{l.descricao || "-"}</td>
+                      <td>
+                        <div className="actions">
+                          <button className="btn" onClick={() => editar(l)}>
+                            Editar
+                          </button>
+                          <button className="btn btn-ghost" onClick={() => excluir(l.id)}>
+                            Excluir
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </>
         )}
       </section>
     </div>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../services/api";
+import Toast from "../components/Toast";
 
 const STATUS = ["planejado", "em_andamento", "pausado", "finalizado"];
 
@@ -7,6 +8,10 @@ export default function Projetos() {
   const [projetos, setProjetos] = useState([]);
   const [clientes, setClientes] = useState([]);
   const [editandoId, setEditandoId] = useState(null);
+  const [feedback, setFeedback] = useState({ message: "", tone: "info" });
+  const [salvando, setSalvando] = useState(false);
+  const [carregando, setCarregando] = useState(false);
+  const [erros, setErros] = useState({});
 
   const [form, setForm] = useState({
     cliente_id: "",
@@ -24,12 +29,16 @@ export default function Projetos() {
   }, []);
 
   function carregar() {
-    api.get("/projetos").then((r) => setProjetos(r.data));
+    setCarregando(true);
+    api.get("/projetos")
+      .then((r) => setProjetos(r.data))
+      .finally(() => setCarregando(false));
     api.get("/clientes").then((r) => setClientes(r.data));
   }
 
   function reset() {
     setEditandoId(null);
+    setErros({});
     setForm({
       cliente_id: "",
       nome: "",
@@ -53,8 +62,18 @@ export default function Projetos() {
   function handleSubmit(e) {
     e.preventDefault();
     const erro = validar();
-    if (erro) return alert(erro);
+    const novosErros = {};
+    if (!form.cliente_id) novosErros.cliente_id = "Cliente é obrigatório.";
+    if (!form.nome?.trim()) novosErros.nome = "Nome é obrigatório.";
+    if (!form.data_inicio) novosErros.data_inicio = "Data início é obrigatória.";
+    if (!form.valor_contrato) novosErros.valor_contrato = "Valor é obrigatório.";
+    if (!form.custo_hora_base) novosErros.custo_hora_base = "Custo é obrigatório.";
+    if (erro && erro.includes("valor_contrato")) novosErros.valor_contrato = erro;
+    if (erro && erro.includes("custo_hora_base")) novosErros.custo_hora_base = erro;
+    setErros(novosErros);
+    if (Object.keys(novosErros).length) return;
 
+    setSalvando(true);
     const payload = {
       ...form,
       cliente_id: Number(form.cliente_id),
@@ -68,10 +87,24 @@ export default function Projetos() {
       ? api.put(`/projetos/${editandoId}`, payload)
       : api.post("/projetos", payload);
 
-    req.then(() => {
-      reset();
-      carregar();
-    });
+    req
+      .then(() => {
+        reset();
+        setFeedback({ message: "Projeto salvo com sucesso!", tone: "success" });
+        carregar();
+      })
+      .catch((err) => {
+        const apiErrors = err?.response?.data?.errors;
+        if (apiErrors) {
+          const mapped = {};
+          Object.keys(apiErrors).forEach((k) => {
+            mapped[k] = apiErrors[k][0];
+          });
+          setErros(mapped);
+        }
+        setFeedback({ message: "Erro ao salvar projeto.", tone: "error" });
+      })
+      .finally(() => setSalvando(false));
   }
 
   function editar(p) {
@@ -90,13 +123,24 @@ export default function Projetos() {
 
   function excluir(id) {
     if (confirm("Excluir projeto?")) {
-      api.delete(`/projetos/${id}`).then(carregar);
+      api
+        .delete(`/projetos/${id}`)
+        .then(() => {
+          setFeedback({ message: "Projeto excluído.", tone: "info" });
+          carregar();
+        })
+        .catch(() => setFeedback({ message: "Erro ao excluir projeto.", tone: "error" }));
     }
   }
 
   return (
     <div>
       <h1 className="page-title">Projetos</h1>
+      <Toast
+        message={feedback.message}
+        tone={feedback.tone}
+        onClose={() => setFeedback({ message: "", tone: "info" })}
+      />
 
       <section className="panel">
         <form onSubmit={handleSubmit} className="grid">
@@ -114,6 +158,7 @@ export default function Projetos() {
                 </option>
               ))}
             </select>
+            {erros.cliente_id && <small>{erros.cliente_id}</small>}
           </label>
 
           <label className="field">
@@ -124,6 +169,7 @@ export default function Projetos() {
               onChange={(e) => setForm({ ...form, nome: e.target.value })}
               required
             />
+            {erros.nome && <small>{erros.nome}</small>}
           </label>
 
           <label className="field">
@@ -145,6 +191,7 @@ export default function Projetos() {
                 onChange={(e) => setForm({ ...form, data_inicio: e.target.value })}
                 required
               />
+              {erros.data_inicio && <small>{erros.data_inicio}</small>}
             </label>
 
             <label className="field">
@@ -168,6 +215,7 @@ export default function Projetos() {
                 onChange={(e) => setForm({ ...form, valor_contrato: e.target.value })}
                 required
               />
+              {erros.valor_contrato && <small>{erros.valor_contrato}</small>}
             </label>
 
             <label className="field">
@@ -180,6 +228,7 @@ export default function Projetos() {
                 onChange={(e) => setForm({ ...form, custo_hora_base: e.target.value })}
                 required
               />
+              {erros.custo_hora_base && <small>{erros.custo_hora_base}</small>}
             </label>
           </div>
 
@@ -195,8 +244,8 @@ export default function Projetos() {
           </label>
 
           <div className="actions">
-            <button className="btn btn-primary" type="submit">
-              {editandoId ? "Atualizar" : "Salvar"}
+            <button className="btn btn-primary" type="submit" disabled={salvando}>
+              {salvando ? "Salvando..." : editandoId ? "Atualizar" : "Salvar"}
             </button>
             {editandoId && (
               <button className="btn btn-ghost" type="button" onClick={reset}>
@@ -218,8 +267,25 @@ export default function Projetos() {
             </tr>
           </thead>
           <tbody>
-            {projetos.map((p) => (
-              <tr key={p.id}>
+            {carregando ? (
+              [1, 2, 3].map((i) => (
+                <tr className="skeleton-row" key={i}>
+                  <td>
+                    <div className="skeleton skeleton-line" />
+                  </td>
+                  <td>
+                    <div className="skeleton skeleton-line" />
+                  </td>
+                  <td>
+                    <div className="skeleton skeleton-line" />
+                  </td>
+                  <td>
+                    <div className="skeleton skeleton-line" />
+                  </td>
+                </tr>
+              ))
+            ) : projetos.map((p) => (
+              <tr key={p.id} className="row-animate">
                 <td>{p.nome}</td>
                 <td>{p.client?.nome || p.cliente_id}</td>
                 <td>

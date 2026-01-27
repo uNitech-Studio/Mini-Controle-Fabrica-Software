@@ -1,6 +1,17 @@
 import { useEffect, useState } from "react";
 import api from "../services/api";
-import { PieChart, Pie, Tooltip, Cell, ResponsiveContainer } from "recharts";
+import {
+  PieChart,
+  Pie,
+  Tooltip,
+  Cell,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+} from "recharts";
 
 const COLORS = ["#e2725b", "#2f6d7a", "#f2a05b", "#1f2937"];
 
@@ -10,6 +21,7 @@ export default function Dashboard() {
   const [inicio, setInicio] = useState("");
   const [fim, setFim] = useState("");
   const [dados, setDados] = useState(null);
+  const [carregando, setCarregando] = useState(false);
 
   useEffect(() => {
     api.get("/projetos").then((r) => setProjetos(r.data));
@@ -21,11 +33,13 @@ export default function Dashboard() {
       return;
     }
 
+    setCarregando(true);
     api
       .get(`/projetos/${projetoId}/dashboard`, {
         params: { inicio, fim },
       })
-      .then((r) => setDados(r.data));
+      .then((r) => setDados(r.data))
+      .finally(() => setCarregando(false));
   }
 
   function exportCSV() {
@@ -50,6 +64,7 @@ export default function Dashboard() {
     ? Object.entries(dados.porTipo).map(([tipo, v]) => ({
         name: tipo,
         value: v.horas,
+        custo: v.custo,
       }))
     : [];
 
@@ -85,14 +100,37 @@ export default function Dashboard() {
           </div>
 
           <div className="actions">
-            <button className="btn btn-primary" onClick={buscar}>
-              Calcular
+            <button className="btn btn-primary" onClick={buscar} disabled={carregando}>
+              {carregando ? "Calculando..." : "Calcular"}
             </button>
           </div>
         </div>
       </section>
 
-      {dados && (
+      {carregando && (
+        <>
+          <section className="panel">
+            <div className="metrics">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div className="metric-card" key={i}>
+                  <div className="skeleton skeleton-line" />
+                  <div style={{ height: 8 }} />
+                  <div className="skeleton skeleton-line" />
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="panel">
+            <div className="grid grid-2">
+              <div className="chart-box skeleton" />
+              <div className="chart-box skeleton" />
+            </div>
+          </section>
+        </>
+      )}
+
+      {dados && !carregando && (
         <>
           <section className="panel">
             <div className="metrics">
@@ -108,17 +146,30 @@ export default function Dashboard() {
           <section className="panel">
             <div className="grid">
               <h3>Horas por tipo</h3>
-              <div style={{ width: "100%", height: 280 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={chartData} dataKey="value" outerRadius={110} innerRadius={50}>
-                      {chartData.map((_, i) => (
-                        <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
+              <div className="grid grid-2">
+                <div className="chart-box">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie data={chartData} dataKey="value" outerRadius={110} innerRadius={50}>
+                        {chartData.map((_, i) => (
+                          <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="chart-box">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+                      <XAxis dataKey="name" stroke="#94a3b8" />
+                      <YAxis stroke="#94a3b8" />
+                      <Tooltip />
+                      <Bar dataKey="value" fill="#f97316" radius={[8, 8, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
               <div className="actions">
                 <button className="btn btn-ghost" onClick={exportCSV}>
