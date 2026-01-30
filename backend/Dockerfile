@@ -8,5 +8,9 @@ RUN apt-get update \
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www
+COPY . .
 
-EXPOSE 8000
+RUN composer install --no-dev --optimize-autoloader
+
+EXPOSE 8080
+CMD ["sh","-c","php artisan serve --host=0.0.0.0 --port=${PORT:-8080}"]
